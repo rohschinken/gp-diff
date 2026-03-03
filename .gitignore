@@ -1,0 +1,30 @@
+node_modules/
+/node_modules/
+dist/
+testfiles/
+
+# Build outputs
+*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+tmp/
+temp/
+.cache/
+
+# Windows artifacts
+nul
