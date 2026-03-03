@@ -1,5 +1,8 @@
 import { useEffect, useRef } from 'react'
-import { AlphaTabApi, LayoutMode, Score } from '@coderline/alphatab'
+import { AlphaTabApi, LayoutMode } from '@coderline/alphatab'
+import type { model } from '@coderline/alphatab'
+
+type Score = model.Score
 
 export interface AlphaTabPaneProps {
   buffer: ArrayBuffer | null

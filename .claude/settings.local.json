@@ -29,7 +29,8 @@
       "Bash(npx vitest run src/renderer/AlphaTabPane.test.tsx)",
       "Bash(npx tsc -b)",
       "Bash(npm test -- --run)",
-      "Bash(npx vitest run src/components/TrackToolbar.test.tsx)"
+      "Bash(npx vitest run src/components/TrackToolbar.test.tsx)",
+      "Bash(npm run build)"
     ]
   }
 }

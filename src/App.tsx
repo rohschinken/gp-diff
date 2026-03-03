@@ -1,5 +1,8 @@
 import { useCallback, useRef, useState } from 'react'
-import { AlphaTabApi, Score } from '@coderline/alphatab'
+import { AlphaTabApi } from '@coderline/alphatab'
+import type { model } from '@coderline/alphatab'
+
+type Score = model.Score
 import { SplitPane } from './components/SplitPane'
 import { TrackToolbar, TrackInfo } from './components/TrackToolbar'
 import { AlphaTabPane } from './renderer/AlphaTabPane'
@@ -34,7 +37,7 @@ function forceStaveVisibility(score: Score) {
 }
 
 function renderTrackOnApi(api: AlphaTabApi, trackIndex: number) {
-  api.renderTracks([api.score.tracks[trackIndex]])
+  api.renderTracks([api.score!.tracks[trackIndex]])
 }
 
 function App() {

@@ -83,7 +83,7 @@ export function useFileLoader(): UseFileLoaderReturn {
           return
         }
 
-        const filePath = typeof selected === 'string' ? selected : selected.path
+        const filePath = typeof selected === 'string' ? selected : (selected as { path: string }).path
         const fileName = getFileNameFromPath(filePath)
 
         if (!isValidExtension(fileName)) {
