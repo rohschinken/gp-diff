@@ -15,7 +15,7 @@ mkdir -p public/font && cp node_modules/@coderline/alphatab/dist/font/Bravura.{e
 npm run dev
 ```
 
-Open `http://localhost:5173`. Click "Open File A" to load a `.gp` file.
+Open `http://localhost:5173`. Click "Open File A" / "Open File B" to load `.gp` files into the top and bottom panes. Use the track tabs to switch between instruments.
 
 ## Scripts
 
@@ -30,7 +30,7 @@ Open `http://localhost:5173`. Click "Open File A" to load a `.gp` file.
 
 - **Phase 1** — Scaffold & Tooling (complete)
 - **Phase 2** — alphaTab Rendering, single pane (complete)
-- Phase 3 — Dual Pane & Track Switcher
+- **Phase 3** — Dual Pane & Track Switcher (complete)
 - Phase 4 — Diff Engine
 - Phase 5 — Diff Overlay
 - Phase 6 — Synchronized Scrolling

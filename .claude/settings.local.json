@@ -27,7 +27,9 @@
       "Bash(nvm install 22)",
       "Bash(nvm use 22.22.0)",
       "Bash(npx vitest run src/renderer/AlphaTabPane.test.tsx)",
-      "Bash(npx tsc -b)"
+      "Bash(npx tsc -b)",
+      "Bash(npm test -- --run)",
+      "Bash(npx vitest run src/components/TrackToolbar.test.tsx)"
     ]
   }
 }

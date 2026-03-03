@@ -1,13 +1,19 @@
 import { useEffect, useRef } from 'react'
-import { AlphaTabApi, LayoutMode, StaveProfile } from '@coderline/alphatab'
+import { AlphaTabApi, LayoutMode, Score } from '@coderline/alphatab'
 
 export interface AlphaTabPaneProps {
   buffer: ArrayBuffer | null
   onRenderFinished?: (api: AlphaTabApi) => void
+  onScoreLoaded?: (score: Score) => void
 }
 
-export function AlphaTabPane({ buffer, onRenderFinished }: AlphaTabPaneProps) {
+export function AlphaTabPane({ buffer, onRenderFinished, onScoreLoaded }: AlphaTabPaneProps) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const onRenderFinishedRef = useRef(onRenderFinished)
+  const onScoreLoadedRef = useRef(onScoreLoaded)
+
+  onRenderFinishedRef.current = onRenderFinished
+  onScoreLoadedRef.current = onScoreLoaded
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -18,7 +24,6 @@ export function AlphaTabPane({ buffer, onRenderFinished }: AlphaTabPaneProps) {
       },
       display: {
         layoutMode: LayoutMode.Horizontal,
-        staveProfile: StaveProfile.Tab,
       },
       player: {
         enablePlayer: false,
@@ -26,8 +31,12 @@ export function AlphaTabPane({ buffer, onRenderFinished }: AlphaTabPaneProps) {
       },
     })
 
-    const unsubscribe = api.postRenderFinished.on(() => {
-      onRenderFinished?.(api)
+    const unsubRender = api.postRenderFinished.on(() => {
+      onRenderFinishedRef.current?.(api)
+    })
+
+    const unsubScore = api.scoreLoaded.on((score: Score) => {
+      onScoreLoadedRef.current?.(score)
     })
 
     if (buffer !== null) {
@@ -35,10 +44,11 @@ export function AlphaTabPane({ buffer, onRenderFinished }: AlphaTabPaneProps) {
     }
 
     return () => {
-      unsubscribe()
+      unsubRender()
+      unsubScore()
       api.destroy()
     }
-  }, [buffer, onRenderFinished])
+  }, [buffer])
 
   return (
     <div ref={containerRef} className="w-full h-full overflow-auto" />

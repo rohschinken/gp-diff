@@ -6,8 +6,11 @@ let mockLoad: ReturnType<typeof vi.fn>
 let mockDestroy: ReturnType<typeof vi.fn>
 let mockPostRenderOn: ReturnType<typeof vi.fn>
 let mockUnsubscribe: ReturnType<typeof vi.fn>
+let mockScoreLoadedOn: ReturnType<typeof vi.fn>
+let mockScoreLoadedUnsubscribe: ReturnType<typeof vi.fn>
 let capturedOptions: Record<string, unknown> | null
 let capturedPostRenderHandler: (() => void) | null
+let capturedScoreLoadedHandler: ((score: unknown) => void) | null
 
 vi.mock('@coderline/alphatab', () => {
   const LayoutMode = { Page: 0, Horizontal: 1, Parchment: 2 }
@@ -24,7 +27,7 @@ vi.mock('@coderline/alphatab', () => {
       this.load = mockLoad
       this.destroy = mockDestroy
       this.postRenderFinished = { on: mockPostRenderOn, off: vi.fn() }
-      this.scoreLoaded = { on: vi.fn(() => vi.fn()), off: vi.fn() }
+      this.scoreLoaded = { on: mockScoreLoadedOn, off: vi.fn() }
     }
   }
 
@@ -35,12 +38,18 @@ describe('AlphaTabPane', () => {
   beforeEach(() => {
     capturedOptions = null
     capturedPostRenderHandler = null
+    capturedScoreLoadedHandler = null
     mockLoad = vi.fn()
     mockDestroy = vi.fn()
     mockUnsubscribe = vi.fn()
+    mockScoreLoadedUnsubscribe = vi.fn()
     mockPostRenderOn = vi.fn((handler: () => void) => {
       capturedPostRenderHandler = handler
       return mockUnsubscribe
+    })
+    mockScoreLoadedOn = vi.fn((handler: (score: unknown) => void) => {
+      capturedScoreLoadedHandler = handler
+      return mockScoreLoadedUnsubscribe
     })
   })
 
@@ -60,12 +69,11 @@ describe('AlphaTabPane', () => {
     expect(core.scriptFile).toBe('/alphaTab.worker.mjs')
   })
 
-  it('sets layoutMode to Horizontal and staveProfile to Tab', () => {
+  it('sets layoutMode to Horizontal', () => {
     render(<AlphaTabPane buffer={null} />)
 
     const display = capturedOptions!.display as Record<string, unknown>
     expect(display.layoutMode).toBe(1) // LayoutMode.Horizontal
-    expect(display.staveProfile).toBe(3) // StaveProfile.Tab
   })
 
   it('disables player', () => {
@@ -130,5 +138,28 @@ describe('AlphaTabPane', () => {
     expect(mockUnsubscribe).not.toHaveBeenCalled()
     unmount()
     expect(mockUnsubscribe).toHaveBeenCalledOnce()
+  })
+
+  it('fires onScoreLoaded when scoreLoaded emits', () => {
+    const onScoreLoaded = vi.fn()
+    const fakeScore = { tracks: [{ name: 'Guitar' }] }
+    render(<AlphaTabPane buffer={new ArrayBuffer(8)} onScoreLoaded={onScoreLoaded} />)
+
+    expect(onScoreLoaded).not.toHaveBeenCalled()
+
+    act(() => {
+      capturedScoreLoadedHandler?.(fakeScore)
+    })
+
+    expect(onScoreLoaded).toHaveBeenCalledOnce()
+    expect(onScoreLoaded).toHaveBeenCalledWith(fakeScore)
+  })
+
+  it('unsubscribes from scoreLoaded on unmount', () => {
+    const { unmount } = render(<AlphaTabPane buffer={null} />)
+
+    expect(mockScoreLoadedUnsubscribe).not.toHaveBeenCalled()
+    unmount()
+    expect(mockScoreLoadedUnsubscribe).toHaveBeenCalledOnce()
   })
 })
