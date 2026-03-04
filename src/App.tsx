@@ -9,6 +9,7 @@ import { AlphaTabPane } from './renderer/AlphaTabPane'
 import type { AlphaTabPaneHandle } from './renderer/AlphaTabPane'
 import { DiffOverlay } from './renderer/DiffOverlay'
 import { DiffMinimap } from './components/DiffMinimap'
+import { DiffFilterBar } from './components/DiffFilterBar'
 import { useFileLoader } from './hooks/useFileLoader'
 import { useSyncScroll } from './hooks/useSyncScroll'
 import { diffScores } from './diff/diffEngine'
@@ -69,7 +70,7 @@ function App() {
   const [diffResult, setDiffResult] = useState<DiffResult | null>(null)
   const [renderKeyA, setRenderKeyA] = useState(0)
   const [renderKeyB, setRenderKeyB] = useState(0)
-  const [filters] = useState<DiffFilters>(DEFAULT_DIFF_FILTERS)
+  const [filters, setFilters] = useState<DiffFilters>(DEFAULT_DIFF_FILTERS)
 
   const [scrollElA, setScrollElA] = useState<HTMLElement | null>(null)
   const [scrollElB, setScrollElB] = useState<HTMLElement | null>(null)
@@ -167,6 +168,11 @@ function App() {
       <header className="h-12 flex items-center px-4 border-b border-gray-200">
         <h1 className="text-lg font-semibold text-gray-800">Riff-Diff</h1>
       </header>
+      <DiffFilterBar
+        filters={filters}
+        onFiltersChange={setFilters}
+        summary={diffResult?.summary ?? null}
+      />
       <TrackToolbar
         tracksA={tracksA}
         tracksB={tracksB}

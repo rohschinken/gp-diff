@@ -35,7 +35,8 @@
       "Bash(node -e \":*)",
       "Bash(npx vitest run src/hooks/useSyncScroll.test.ts)",
       "Bash(npm test)",
-      "Bash(npx vitest run src/components/DiffMinimap.test.tsx)"
+      "Bash(npx vitest run src/components/DiffMinimap.test.tsx)",
+      "Bash(npx vitest run src/components/DiffFilterBar.test.tsx)"
     ]
   }
 }

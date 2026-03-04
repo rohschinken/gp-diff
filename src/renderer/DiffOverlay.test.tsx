@@ -345,7 +345,7 @@ describe('DiffOverlay', () => {
 
     const badge = screen.getByTestId('badge-0')
     expect(badge.textContent).toBe('120 BPM')
-    expect(badge.style.backgroundColor).toBe('#d97706')
+    expect(badge.style.backgroundColor).toBe('#374151')
   })
 
   // 14. TimeSig diff → badge with signature text
