@@ -27,16 +27,16 @@ export function TrackToolbar({
   const hasMismatch = tracksB !== null && tracksA.length !== tracksB.length
 
   return (
-    <div className="flex items-center gap-2 px-4 py-1 border-b border-gray-200 bg-gray-50 overflow-x-auto">
+    <div className="flex items-center gap-2 px-5 py-1.5 border-b border-chrome-border bg-chrome-bg overflow-x-auto theme-transition">
       <div className="flex items-center gap-1">
         {tracksA.map((track) => (
           <button
             key={track.index}
             onClick={() => onTrackChange(track.index)}
-            className={`text-sm px-3 py-1 rounded ${
+            className={`text-sm px-3 py-1.5 rounded-md font-medium transition-colors ${
               track.index === selectedTrackIndex
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                ? 'bg-chrome-accent text-white shadow-sm'
+                : 'bg-chrome-bg-subtle text-chrome-text-muted hover:text-chrome-text hover:bg-chrome-border'
             }`}
           >
             {track.name}
@@ -46,15 +46,15 @@ export function TrackToolbar({
 
       {hasMismatch && (
         <>
-          <span className="text-xs text-amber-700 bg-amber-100 px-2 py-0.5 rounded">
+          <span className="text-xs text-amber-700 bg-amber-100 px-2.5 py-1 rounded-md font-medium">
             Track count mismatch
           </span>
 
           <div className="flex items-center gap-2 ml-auto">
-            <label className="text-xs text-gray-500">
+            <label className="text-xs text-chrome-text-muted">
               A:
               <select
-                className="ml-1 text-sm border border-gray-300 rounded px-1"
+                className="ml-1 text-sm border border-chrome-border rounded-md px-1 bg-chrome-bg-subtle text-chrome-text"
                 value={trackMapA}
                 onChange={(e) => onTrackMapChange('A', Number(e.target.value))}
               >
@@ -63,10 +63,10 @@ export function TrackToolbar({
                 ))}
               </select>
             </label>
-            <label className="text-xs text-gray-500">
+            <label className="text-xs text-chrome-text-muted">
               B:
               <select
-                className="ml-1 text-sm border border-gray-300 rounded px-1"
+                className="ml-1 text-sm border border-chrome-border rounded-md px-1 bg-chrome-bg-subtle text-chrome-text"
                 value={trackMapB}
                 onChange={(e) => onTrackMapChange('B', Number(e.target.value))}
               >

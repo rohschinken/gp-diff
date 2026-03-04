@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import type { AlphaTabApi } from '@coderline/alphatab'
 import type { DiffResult, DiffFilters, MeasureDiff } from '../diff/types'
+import { DIFF_COLORS } from '../diff/colors'
 
 export type OverlaySide = 'A' | 'B'
 
@@ -13,12 +14,12 @@ export interface DiffOverlayProps {
 }
 
 const COLORS = {
-  added: 'rgba(34, 197, 94, 0.25)',
-  removed: 'rgba(239, 68, 68, 0.25)',
-  changed: 'rgba(234, 179, 8, 0.25)',
-  ghostAdded: 'rgba(34, 197, 94, 0.12)',
-  ghostRemoved: 'rgba(239, 68, 68, 0.12)',
-  tempoBadge: '#374151',
+  added: DIFF_COLORS.added.overlay,
+  removed: DIFF_COLORS.removed.overlay,
+  changed: DIFF_COLORS.changed.overlay,
+  ghostAdded: DIFF_COLORS.added.ghost,
+  ghostRemoved: DIFF_COLORS.removed.ghost,
+  tempoBadge: DIFF_COLORS.meta.solid,
 } as const
 
 interface OverlayRect {
@@ -196,10 +197,11 @@ export function DiffOverlay({ diffResult, side, api, renderKey, filters }: DiffO
             fontSize: 11,
             fontWeight: 700,
             lineHeight: '16px',
-            padding: '2px 6px',
-            borderRadius: 4,
+            padding: '2px 8px',
+            borderRadius: 6,
             whiteSpace: 'nowrap',
             pointerEvents: 'none',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
           }}
         >
           {badge.label}

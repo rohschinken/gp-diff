@@ -111,8 +111,8 @@ describe('DiffFilterBar visual states', () => {
     })
     const added = screen.getByTestId('filter-added')
     const removed = screen.getByTestId('filter-removed')
-    expect(added.className).toContain('bg-gray-200')
-    expect(removed.className).toContain('bg-red-500')
+    expect(added.className).toContain('bg-chrome-bg-subtle')
+    expect(removed.className).toContain('bg-diff-removed')
   })
 
   it('counts update when summary changes', () => {

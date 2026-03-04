@@ -10,7 +10,7 @@ Visual diff tool for Guitar Pro 7/8 (`.gp`, `.gp7`, `.gp8`) files. Load two vers
    - **Red** — beat removed from File A
    - **Yellow** — beat changed (different notes, rhythm, or articulation)
    - **Faded ghost** — marks measures where the other file has extra content
-   - **Amber badge** — tempo or time signature change
+   - **Indigo badge** — tempo or time signature change
 3. **Switch tracks** to compare individual instruments (guitar, bass, drums, etc.)
 4. **Scroll both panes together** via the shared scrollbar at the bottom
 5. **Diff minimap** above the scrollbar shows a bird's-eye overview — click or drag to seek
@@ -52,7 +52,7 @@ Open `http://localhost:5173`. Click "Open File A" / "Open File B" to load `.gp` 
 - **Phase 6** — Synchronized Scrolling (complete)
 - **Phase 7** — Diff Minimap (complete)
 - **Phase 8** — Diff Filter Toggles (complete)
-- Phase 9 — UI Polish
+- **Phase 9** — UI Polish (complete)
 - Phase 10 — Tauri Desktop Packaging
 
 ## License

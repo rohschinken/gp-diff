@@ -1,6 +1,58 @@
 @import "tailwindcss";
 
-/* Force the shared scrollbar to always be visible (no auto-hide overlay) */
+/* ============================================
+   Riff-Diff Theme System
+   ============================================ */
+
+@theme {
+  /* Diff colors — constant across themes */
+  --color-diff-added: #22c55e;
+  --color-diff-removed: #ef4444;
+  --color-diff-changed: #eab308;
+  --color-diff-meta: #6366f1;
+  --color-diff-equal: #374151;
+
+  /* Chrome colors — light mode defaults */
+  --color-chrome-bg: #f8fafc;
+  --color-chrome-bg-subtle: #f1f5f9;
+  --color-chrome-border: #e2e8f0;
+  --color-chrome-text: #1e293b;
+  --color-chrome-text-muted: #64748b;
+  --color-chrome-accent: #6366f1;
+  --color-chrome-accent-hover: #4f46e5;
+
+  /* Shadows */
+  --shadow-header: 0 1px 3px 0 rgba(0, 0, 0, 0.08), 0 1px 2px -1px rgba(0, 0, 0, 0.08);
+  --shadow-pane-divider: 0 1px 4px 0 rgba(0, 0, 0, 0.12);
+}
+
+/* Dark-chrome overrides */
+[data-theme="dark-chrome"] {
+  --color-chrome-bg: #1e293b;
+  --color-chrome-bg-subtle: #334155;
+  --color-chrome-border: #475569;
+  --color-chrome-text: #f1f5f9;
+  --color-chrome-text-muted: #94a3b8;
+  --color-chrome-accent: #818cf8;
+  --color-chrome-accent-hover: #6366f1;
+  --shadow-header: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px -1px rgba(0, 0, 0, 0.3);
+  --shadow-pane-divider: 0 2px 6px 0 rgba(0, 0, 0, 0.3);
+}
+
+/* ============================================
+   Base styles
+   ============================================ */
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================
+   Shared scrollbar (synced bottom scrollbar)
+   ============================================ */
+
 .scrollbar-always-visible {
   overflow-x: scroll !important;
 }
@@ -18,5 +70,13 @@
   background-color: rgba(0, 0, 0, 0.5);
 }
 .scrollbar-always-visible::-webkit-scrollbar-track {
-  background-color: rgba(0, 0, 0, 0.05);
+  background-color: var(--color-chrome-bg-subtle);
+}
+
+/* ============================================
+   Utility: smooth theme transitions
+   ============================================ */
+
+.theme-transition {
+  transition: background-color 200ms ease, border-color 200ms ease, color 200ms ease, box-shadow 200ms ease;
 }

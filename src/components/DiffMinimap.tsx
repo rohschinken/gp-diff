@@ -1,13 +1,14 @@
 import { useEffect, useRef, useCallback, type PointerEvent as ReactPointerEvent } from 'react'
 import type { DiffResult, DiffFilters, MeasureDiff, BeatStatus } from '../diff/types'
+import { DIFF_COLORS } from '../diff/colors'
 
 const MINIMAP_HEIGHT = 40
 
 export const MINIMAP_COLORS: Record<BeatStatus, string> = {
-  equal: '#374151',
-  added: 'rgb(34, 197, 94)',
-  removed: 'rgb(239, 68, 68)',
-  changed: 'rgb(234, 179, 8)',
+  equal: DIFF_COLORS.equal.solid,
+  added: DIFF_COLORS.added.rgb,
+  removed: DIFF_COLORS.removed.rgb,
+  changed: DIFF_COLORS.changed.rgb,
 }
 
 const STATUS_PRIORITY: Record<BeatStatus, number> = {

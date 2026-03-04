@@ -1,0 +1,15 @@
+{
+  "name": "Riff-Diff",
+  "short_name": "Riff-Diff",
+  "icons": [
+    {
+      "src": "/riff-diff-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "theme_color": "#1e293b",
+  "background_color": "#f8fafc",
+  "display": "standalone"
+}

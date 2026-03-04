@@ -36,7 +36,10 @@
       "Bash(npx vitest run src/hooks/useSyncScroll.test.ts)",
       "Bash(npm test)",
       "Bash(npx vitest run src/components/DiffMinimap.test.tsx)",
-      "Bash(npx vitest run src/components/DiffFilterBar.test.tsx)"
+      "Bash(npx vitest run src/components/DiffFilterBar.test.tsx)",
+      "Bash(npx vitest run src/hooks/useTheme.test.ts)",
+      "Bash(npx vitest run src/renderer/DiffOverlay.test.tsx src/components/DiffMinimap.test.tsx)",
+      "Bash(npx vitest run src/components/TrackToolbar.test.tsx src/components/DiffFilterBar.test.tsx)"
     ]
   }
 }

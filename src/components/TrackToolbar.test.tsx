@@ -54,8 +54,8 @@ describe('TrackToolbar', () => {
     const bassButton = screen.getByText('Bass').closest('button')
     const guitarButton = screen.getByText('Electric Guitar').closest('button')
 
-    expect(bassButton?.className).toContain('bg-blue-600')
-    expect(guitarButton?.className).not.toContain('bg-blue-600')
+    expect(bassButton?.className).toContain('bg-chrome-accent')
+    expect(guitarButton?.className).not.toContain('bg-chrome-accent')
   })
 
   it('renders warning badge when track counts differ', () => {
