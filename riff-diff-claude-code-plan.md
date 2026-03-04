@@ -18,7 +18,7 @@ Owns architecture and code quality. Makes all structural decisions. Enforces: no
 Writes **all tests before implementation begins** in each phase. Uses Vitest with happy-dom. Defines acceptance criteria as runnable assertions. A phase is not complete until `npx vitest run` exits 0. Also responsible for edge-case coverage: empty measures, mismatched track counts, identical files, single-note changes.
 
 ### UX Engineer
-Owns visual design and interaction. Enforces: consistent colour palette (added=#1a7a2e, removed=#7a1a1a, changed=#7a5a1a, tempo/timesig=#b85c00), accessible contrast ratios, keyboard-navigable controls, meaningful empty/loading/error states. Reviews every UI component before it ships.
+Owns visual design and interaction. Enforces: consistent colour palette (added=`#22c55e`, removed=`#ef4444`, changed=`#eab308`, meta/tempo=`#6366f1`, equal=`#374151` — centralized in `src/diff/colors.ts`), accessible contrast ratios, keyboard-navigable controls, meaningful empty/loading/error states. Reviews every UI component before it ships.
 
 ### Musician (Domain Expert)
 Validates that the app makes sense to a guitarist. Checks: tab renders with correct string/fret layout (string 1 = high e = top line), measure numbers are visible, tempo and time-sig changes are surfaced clearly, diff colours are intuitive. Raises issues if any musical concept is misrepresented in the UI.
@@ -156,28 +156,52 @@ riff-diff/
 │   ├── alphaTab.worker.min.mjs
 │   └── font/
 │       └── Bravura.{eot,otf,svg,woff,woff2}
+├── assets/
+│   ├── riff-diff-favicon-16.png     16×16 favicon source
+│   ├── riff-diff-favicon-32.png     32×32 favicon source
+│   ├── riff-diff-icon-512.png       512×512 app icon
+│   └── riff-diff-wordmark.png       Wordmark logo
+├── public/
+│   ├── alphaTab.worker.mjs          (copied from node_modules)
+│   ├── alphaTab.worker.min.mjs
+│   ├── riff-diff-favicon-16.png     16×16 favicon
+│   ├── riff-diff-favicon-32.png     32×32 favicon
+│   ├── riff-diff-icon-512.png       512×512 app icon
+│   ├── riff-diff-wordmark.png       Wordmark logo
+│   ├── site.webmanifest              PWA manifest
+│   └── font/
+│       └── Bravura.{eot,otf,svg,woff,woff2}
 ├── src/
 │   ├── main.tsx                     React entry point
-│   ├── App.tsx                      Main app: dual pane, file loading, track switching, state
-│   ├── index.css                    @import "tailwindcss"
+│   ├── App.tsx                      Main app: header, panes, theme toggle, state
+│   ├── index.css                    Tailwind + @theme tokens + dark-chrome overrides
 │   ├── vite-env.d.ts
 │   ├── components/
-│   │   ├── SplitPane.tsx            Vertical split (top/bottom) with flex layout
-│   │   └── TrackToolbar.tsx         Track tabs + manual mapping dropdowns
+│   │   ├── SplitPane.tsx            Vertical split (top/bottom) with explicit divider
+│   │   ├── SplitPane.test.tsx
+│   │   ├── TrackToolbar.tsx         Track tabs + manual mapping dropdowns
+│   │   ├── TrackToolbar.test.tsx    8 tests
+│   │   ├── DiffFilterBar.tsx        Four colored pill toggle buttons with live counts
+│   │   ├── DiffFilterBar.test.tsx   13 tests
+│   │   ├── DiffMinimap.tsx          Canvas minimap with shared DIFF_COLORS
+│   │   └── DiffMinimap.test.tsx     16 tests
 │   ├── diff/
-│   │   ├── types.ts                 DiffResult, BeatDiff, NoteDiff, MeasureDiff types
+│   │   ├── types.ts                 DiffResult, BeatDiff, NoteDiff, MeasureDiff, DiffFilters
+│   │   ├── colors.ts               Shared DIFF_COLORS palette (solid, rgb, overlay, ghost)
 │   │   ├── diffEngine.ts           diffScores() — LCS-based beat alignment, note diffs
-│   │   └── diffEngine.test.ts      15 tests: signatures, LCS alignment, tempo, timesig
+│   │   └── diffEngine.test.ts      15 tests
 │   ├── hooks/
 │   │   ├── useFileLoader.ts         File picker (web + Tauri), extension validation
-│   │   ├── useFileLoader.test.ts    11 tests: web/Tauri paths, validation, error handling
+│   │   ├── useFileLoader.test.ts    11 tests
 │   │   ├── useSyncScroll.ts         Shared scrollbar scroll sync hook
-│   │   └── useSyncScroll.test.ts    7 tests: sync, wheel forwarding, cleanup
+│   │   ├── useSyncScroll.test.ts    7 tests
+│   │   ├── useTheme.ts             Theme toggle hook (light / dark-chrome)
+│   │   └── useTheme.test.ts        5 tests
 │   ├── renderer/
 │   │   ├── AlphaTabPane.tsx         alphaTab API wrapper with forwardRef + portal lifecycle
-│   │   ├── AlphaTabPane.test.tsx    15 tests: config, lifecycle, callbacks, portal, ref
-│   │   ├── DiffOverlay.tsx          Diff overlay with computeOverlays() pure fn
-│   │   └── DiffOverlay.test.tsx     18 tests: colors, ghosts, badges, dedup, multi-staff
+│   │   ├── AlphaTabPane.test.tsx    15 tests
+│   │   ├── DiffOverlay.tsx          Diff overlay with shared DIFF_COLORS, indigo badges
+│   │   └── DiffOverlay.test.tsx     18 tests
 │   └── test/
 │       └── setup.ts                 @testing-library/jest-dom matchers
 ├── testfiles/                       8 GP test files (gitignored)
@@ -188,27 +212,6 @@ riff-diff/
 ├── tsconfig.app.json                Strict, ES2020, types: ["vitest/globals", "@testing-library/jest-dom"]
 ├── tsconfig.node.json               Covers vite.config.ts
 └── package.json
-```
-
-```
-│   ├── renderer/
-│   │   ├── DiffOverlay.tsx        Diff overlay with computeOverlays() pure fn
-│   │   └── DiffOverlay.test.tsx   18 tests: colors, ghosts, badges, dedup, filters
-│   ├── hooks/
-│   │   ├── useSyncScroll.ts       Shared scrollbar sync hook
-│   │   └── useSyncScroll.test.ts  7 tests: scroll sync, wheel fwd, cleanup
-```
-
-```
-│   ├── components/
-│   │   ├── DiffMinimap.tsx          Canvas minimap with computeMeasureStatus() + drawMinimap()
-│   │   └── DiffMinimap.test.tsx     16 tests: status priority, canvas drawing, seek, edge cases
-```
-
-**Future files (not yet created):**
-```
-src/components/DiffFilterBar.tsx     Phase 8
-src/components/DropZone.tsx          Phase 9
 ```
 
 ---
@@ -224,11 +227,11 @@ src/components/DropZone.tsx          Phase 9
 | 5 Diff Overlay | **COMPLETE** | +18 (DiffOverlay) |
 | 6 Synchronized Scrolling | **COMPLETE** | +7 (useSyncScroll) + 1 (AlphaTabPane) |
 | 7 Diff Minimap | **COMPLETE** | +16 (DiffMinimap) |
-| 8 Diff Filter Toggles | Not started | — |
-| 9 UI Polish | Not started | — |
+| 8 Diff Filter Toggles | **COMPLETE** | +13 (DiffFilterBar) |
+| 9 UI Polish | **COMPLETE** | +5 (useTheme) |
 | 10 Tauri Desktop | Not started | — |
 
-**Total: 92 tests passing**, `npm run build` clean.
+**Total: 110 tests passing**, `npm run build` clean.
 
 ---
 
@@ -361,40 +364,70 @@ Each phase: **QA Engineer writes tests first → Lead Engineer implements → te
 
 ---
 
-### Phase 8 — Diff Filter Toggles
-**Agents:** Lead Engineer, QA Engineer, UX Engineer
+### Phase 8 — Diff Filter Toggles ✅ COMPLETE
 
-**Implement:** `DiffFilterBar.tsx` — four toggle buttons (Added/Removed/Changed/Tempo+TimeSig) showing live counts from `diffResult.summary`. `DiffFilters` state in `App.tsx`, passed down to `DiffOverlay` (×2) and `DiffMinimap`.
+**What was built:**
+- `DiffFilterBar.tsx` — four colored pill toggle buttons (Added/Removed/Changed/Tempo+TimeSig) with live counts from `diffResult.summary`
+- Data-driven `PILLS` config array mapping filter keys to labels, active CSS classes, test IDs, and count getter functions
+- `DiffFilters` state in `App.tsx`, passed to `DiffOverlay` (×2) and `DiffMinimap`
+- Disabled state (greyed, no-click) when no diff result exists
 
-**Tests (`src/components/DiffFilterBar.test.ts`):**
-- All four buttons render with correct counts
-- Clicking Added button toggles `filters.showAdded`
-- Active/inactive visual state applied correctly
-- Count updates when `diffResult.summary` changes
+**Key decisions:**
+- **Data-driven pill config** — `PILLS: PillConfig[]` array drives rendering; adding a new filter = adding one config entry
+- **Filter bar positioned in header** — pills sit inline between title and theme toggle, eliminating a separate toolbar row
+- **Pill colors match diff overlay colors** — Added=green, Removed=red, Changed=yellow, Tempo/Sig=indigo. Inactive pills get neutral `bg-chrome-bg-subtle`
+- **`disabled` prop on buttons** — when `summary === null`, pills show count 0, have `opacity-50 cursor-default`, and `onClick` is a no-op
+- **Counts are combined for Tempo/Sig** — `tempoChanges + timeSigChanges` shown as one number
 
-**Phase gate:** Tests pass. Musician confirms toggling "Removed" hides red overlays in both panes and minimap simultaneously.
+**Tests (13):** Rendering (5), toggle behavior (3), visual states (2), disabled state (2), rerender count update (1).
 
 ---
 
-### Phase 9 — UI Shell & Polish
-**Agents:** UX Engineer (leads), Musician, Product Owner
+### Phase 9 — UI Polish (Visual Redesign) ✅ COMPLETE
 
-**Implement:**
-- Header: logo, file-load buttons, zoom `+`/`−`, file names
-- Drag-and-drop on each pane's `DropZone`
+**Scope change:** Original spec included keyboard shortcuts, zoom controls, drag-and-drop, and spinner overlays. These were **deferred** — Phase 9 became a focused visual redesign only, per user request. No new functionality was added.
+
+**What was built:**
+- `src/diff/colors.ts` — centralized `DIFF_COLORS` palette (solid, rgb, overlay, ghost variants). Single source of truth for all overlay/minimap/filter colors
+- `src/hooks/useTheme.ts` — theme toggle hook with localStorage persistence. Two modes: `light` (default) and `dark-chrome`
+- Theme system via CSS custom properties in `@theme` block (Tailwind v4), toggled by `data-theme="dark-chrome"` attribute on `#root`
+- Redesigned header (h-14, branded "Riff-Diff" title with indigo accent, filter pills inline, moon/sun theme toggle)
+- New `PaneHeader` component (side label A/B, vertical divider, filename, contextual Open/Change button)
+- New `EmptyPane` component (full-width drop zone with file icon, instruction text, prominent Open File button)
+- Explicit split pane divider (h-1.5, subtle shadow) replacing thin border
+- Minimap + scrollbar wrapped in chrome footer container
+- DiffOverlay badges changed from gray `#374151` to indigo `#6366f1` with box-shadow
+- Favicon and PWA manifest with custom app icon (split-pane diff icon with red/green/yellow/indigo bars)
+
+**Theme tokens (CSS custom properties):**
+
+| Token | Light | Dark-Chrome |
+|-------|-------|-------------|
+| `chrome-bg` | `#f8fafc` | `#1e293b` |
+| `chrome-bg-subtle` | `#f1f5f9` | `#334155` |
+| `chrome-border` | `#e2e8f0` | `#475569` |
+| `chrome-text` | `#1e293b` | `#f1f5f9` |
+| `chrome-text-muted` | `#64748b` | `#94a3b8` |
+| `chrome-accent` | `#6366f1` | `#818cf8` |
+
+Diff colors (`diff-added`, `diff-removed`, `diff-changed`, `diff-meta`, `diff-equal`) are theme-invariant.
+
+**Key decisions:**
+- **Notation panes always white** — alphaTab renders black notation on white; dark backgrounds would require alphaTab-level changes. Only "chrome" (header, toolbars, pane headers, footer) changes with theme
+- **CSS custom properties via Tailwind v4 `@theme`** — registered as `--color-chrome-*` / `--color-diff-*`, consumed as Tailwind utilities (`bg-chrome-bg`, `text-chrome-text`, etc.)
+- **No `DropZone` component** — drag-and-drop deferred. EmptyPane has a styled Open File button instead
+- **No keyboard shortcuts, zoom, or spinner** — deferred to keep Phase 9 purely visual
+- **Filter bar merged into header** — eliminates a separate toolbar row, cleaner layout
+- **Icon assets:** `riff-diff-favicon-16.png`, `riff-diff-favicon-32.png`, `riff-diff-icon-512.png`, `riff-diff-wordmark.png` in `assets/` and `public/`
+
+**Tests (5 new → 110 total):** useTheme hook — default theme, toggle, data-theme attribute, localStorage persistence, restore from localStorage. All existing test assertions updated for new class names.
+
+**Deferred from original Phase 9 spec:**
+- Keyboard shortcuts (`←`/`→` scroll, `1`–`9` track switch, `[`/`]` jump to diff, filter toggles)
+- Zoom controls (`+`/`−`)
+- Drag-and-drop file loading (`DropZone` component)
 - Spinner overlay during alphaTab render
-- Error card if `api.load()` throws
-- Keyboard shortcuts: `←`/`→` scroll 200px; `1`–`9` switch track; `[`/`]` jump to prev/next diff; `A`/`R`/`C`/`T` toggle filters
-- Jump to next/prev diff buttons using `masterBarBounds.realBounds.x`
-- Zoom calls `api.updateSettings() + api.render()` on both panes
-
-**Tests (`src/components/DropZone.test.ts`, `src/App.test.ts`):**
-- Drop event with valid `.gp` file calls `onFileLoaded`
-- Drop event with invalid extension shows error
-- Keyboard shortcut `[` calls scroll-to-prev-diff with correct bar index
-- Zoom in increments `settings.display.scale` by 0.1
-
-**Phase gate:** PO confirms all features in spec are present. Musician does full walkthrough with a real pair of `.gp` files. UX signs off on visual consistency.
+- Jump to next/prev diff buttons
 
 ---
 
@@ -429,11 +462,11 @@ npm run tauri build                                      # Mac .dmg/.app
 | 2 alphaTab | ✅ done | ✅ done | — | ✅ done | — |
 | 3 Dual Pane | ✅ done | ✅ done | ✅ done | ✅ done | — |
 | 4 Diff Engine | ✅ done | ✅ done | — | — | ✅ done |
-| 5 Overlay | ✅ req | ✅ req | ✅ req | ✅ req | — |
-| 6 Scroll Sync | ✅ req | ✅ req | ✅ req | — | — |
-| 7 Minimap | ✅ req | ✅ req | ✅ req | — | — |
-| 8 Filters | ✅ req | ✅ req | ✅ req | ✅ req | — |
-| 9 Polish | ✅ req | ✅ req | ✅ leads | ✅ req | ✅ req |
+| 5 Overlay | ✅ done | ✅ done | ✅ done | ✅ done | — |
+| 6 Scroll Sync | ✅ done | ✅ done | ✅ done | — | — |
+| 7 Minimap | ✅ done | ✅ done | ✅ done | — | — |
+| 8 Filters | ✅ done | ✅ done | ✅ done | ✅ done | — |
+| 9 Polish | ✅ done | ✅ done | ✅ done | ✅ done | ✅ done |
 | 10 Tauri | ✅ req | ✅ req | — | — | ✅ req |
 
 ---
@@ -468,3 +501,7 @@ npm run tauri build                                      # Mac .dmg/.app
 9. **alphaTab does NOT create `.at-viewport`** — The plan originally referenced `.at-viewport` but this element does not exist. alphaTab creates only `.at-surface` inside the container div. The container div itself (with `overflow-auto`) is the scrollable element.
 
 10. **`scrollbarRef.current` timing** — Passing `useRef.current` to a hook doesn't re-trigger the hook's `useEffect` when the ref value changes (refs don't cause re-renders). Use `useState` with a callback ref (`ref={setScrollbarEl}`) instead to ensure the hook re-runs when the element mounts.
+
+11. **Vite CSS cache stale asset references** — When removing/renaming files referenced from CSS (e.g. favicons, background images), the Vite dev server may cache the old CSS transform and error with `ENOENT`. Restart the dev server to clear the cache.
+
+12. **happy-dom has no `#root` div** — Unlike a real browser loading `index.html`, happy-dom's test environment doesn't create the `#root` element. Tests that need `document.getElementById('root')` (e.g. useTheme) must create it manually in `beforeEach`.

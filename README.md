@@ -15,6 +15,7 @@ Visual diff tool for Guitar Pro 7/8 (`.gp`, `.gp7`, `.gp8`) files. Load two vers
 4. **Scroll both panes together** via the shared scrollbar at the bottom
 5. **Diff minimap** above the scrollbar shows a bird's-eye overview — click or drag to seek
 6. **Filter toggles** in the header let you show/hide Added, Removed, Changed, and Tempo/TimeSig diffs
+7. **Light/Dark theme** — toggle via the moon/sun icon in the header; preference is persisted
 
 The diff engine uses LCS (Longest Common Subsequence) alignment on beat signatures within each measure, so inserted or removed beats don't cause cascading mismatches. Both standard notation and tablature are always shown.
 
