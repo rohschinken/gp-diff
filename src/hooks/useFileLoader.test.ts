@@ -82,22 +82,24 @@ describe('useFileLoader', () => {
   })
 
   describe('Tauri path', () => {
+    let mockOpen: ReturnType<typeof vi.fn>
+    let mockReadFile: ReturnType<typeof vi.fn>
+
     beforeEach(() => {
       (window as any).__TAURI_INTERNALS__ = {}
+      mockOpen = vi.fn().mockResolvedValue('/path/to/song.gp')
+      mockReadFile = vi.fn().mockResolvedValue(new Uint8Array([1, 2, 3, 4]))
+      vi.doMock('@tauri-apps/plugin-dialog', () => ({ open: mockOpen }))
+      vi.doMock('@tauri-apps/plugin-fs', () => ({ readFile: mockReadFile }))
     })
 
     afterEach(() => {
       vi.restoreAllMocks()
+      vi.doUnmock('@tauri-apps/plugin-dialog')
+      vi.doUnmock('@tauri-apps/plugin-fs')
     })
 
     it('returns same shape { fileName, buffer } via openFilePicker', async () => {
-      vi.mock('@tauri-apps/plugin-dialog', () => ({
-        open: vi.fn().mockResolvedValue('/path/to/song.gp'),
-      }))
-      vi.mock('@tauri-apps/plugin-fs', () => ({
-        readFile: vi.fn().mockResolvedValue(new Uint8Array([1, 2, 3, 4])),
-      }))
-
       const { result } = renderHook(() => useFileLoader())
 
       await act(async () => {
@@ -107,6 +109,47 @@ describe('useFileLoader', () => {
       expect(result.current.fileData).not.toBeNull()
       expect(result.current.fileData!.fileName).toBe('song.gp')
       expect(result.current.fileData!.buffer).toBeInstanceOf(ArrayBuffer)
+    })
+
+    it('handles user cancelling the file dialog', async () => {
+      mockOpen.mockResolvedValue(null)
+
+      const { result } = renderHook(() => useFileLoader())
+
+      await act(async () => {
+        await result.current.openFilePicker()
+      })
+
+      expect(result.current.fileData).toBeNull()
+      expect(result.current.error).toBeNull()
+      expect(result.current.isLoading).toBe(false)
+    })
+
+    it('extracts filename from Windows backslash paths', async () => {
+      mockOpen.mockResolvedValue('C:\\Users\\me\\Documents\\song.gp8')
+      mockReadFile.mockResolvedValue(new Uint8Array([1, 2, 3]))
+
+      const { result } = renderHook(() => useFileLoader())
+
+      await act(async () => {
+        await result.current.openFilePicker()
+      })
+
+      expect(result.current.fileData!.fileName).toBe('song.gp8')
+    })
+
+    it('handles readFile errors gracefully', async () => {
+      mockReadFile.mockRejectedValue(new Error('Permission denied'))
+
+      const { result } = renderHook(() => useFileLoader())
+
+      await act(async () => {
+        await result.current.openFilePicker()
+      })
+
+      expect(result.current.fileData).toBeNull()
+      expect(result.current.error).toBe('Permission denied')
+      expect(result.current.isLoading).toBe(false)
     })
   })
 

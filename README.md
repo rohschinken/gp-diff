@@ -21,7 +21,7 @@ The diff engine uses LCS (Longest Common Subsequence) alignment on beat signatur
 
 ## Stack
 
-React, TypeScript, Vite, Tailwind v4, alphaTab, Vitest. Tauri v2 desktop packaging planned.
+React, TypeScript, Vite, Tailwind v4, alphaTab, Vitest, Tauri v2.
 
 ## Getting Started
 
@@ -38,10 +38,63 @@ Open `http://localhost:5173`. Click "Open File A" / "Open File B" to load `.gp` 
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev` | Start dev server |
-| `npm run build` | Type-check + production build |
+| `npm run dev` | Start Vite dev server |
+| `npm run build` | Type-check + production web build |
 | `npm test` | Run tests (Vitest) |
 | `npm run test:ui` | Vitest browser UI |
+| `npm run tauri:dev` | Tauri desktop dev (hot reload) |
+| `npm run tauri:build` | Build desktop installer |
+
+## Building
+
+### Web
+
+```bash
+npm run build
+```
+
+Output: `dist/` — static files ready for any web server. Serve with `npm run preview` to test locally.
+
+### Windows
+
+Requires [Rust](https://www.rust-lang.org/tools/install) and Visual Studio Build Tools with "Desktop development with C++" (includes Windows SDK).
+
+```bash
+npm run tauri:build
+```
+
+Output:
+- **Portable:** `src-tauri/target/release/riff-diff.exe` — standalone, no installation needed
+- **MSI installer:** `src-tauri/target/release/bundle/msi/Riff-Diff_0.1.0_x64_en-US.msi`
+- **NSIS installer:** `src-tauri/target/release/bundle/nsis/Riff-Diff_0.1.0_x64-setup.exe`
+
+The portable `.exe` is fully self-contained (frontend embedded in the binary) and can be run directly without installation. The installers add Start Menu shortcuts and register for uninstall. All variants require WebView2 (pre-installed on Windows 10 1803+ and Windows 11).
+
+### macOS
+
+Requires [Rust](https://www.rust-lang.org/tools/install) and Xcode Command Line Tools.
+
+```bash
+npm run tauri:build
+```
+
+Output:
+- `src-tauri/target/release/bundle/dmg/Riff-Diff_0.1.0_aarch64.dmg` (Apple Silicon)
+- `src-tauri/target/release/bundle/macos/Riff-Diff.app`
+
+### Linux
+
+Requires [Rust](https://www.rust-lang.org/tools/install) and system dependencies (`libwebkit2gtk-4.1-dev`, `libappindicator3-dev`, etc.).
+
+```bash
+npm run tauri:build
+```
+
+Output:
+- `src-tauri/target/release/bundle/deb/riff-diff_0.1.0_amd64.deb`
+- `src-tauri/target/release/bundle/appimage/riff-diff_0.1.0_amd64.AppImage`
+
+> **Note:** Desktop builds are platform-specific — you can only build for the OS you're currently running on.
 
 ## Project Status
 
@@ -54,7 +107,8 @@ Open `http://localhost:5173`. Click "Open File A" / "Open File B" to load `.gp` 
 - **Phase 7** — Diff Minimap (complete)
 - **Phase 8** — Diff Filter Toggles (complete)
 - **Phase 9** — UI Polish (complete)
-- Phase 10 — Tauri Desktop Packaging
+- **Phase 10** — Tauri Desktop Packaging (complete)
+- Phase 11 — UX Enhancements (keyboard shortcuts, zoom, drag-and-drop, spinner, diff navigation)
 
 ## License
 

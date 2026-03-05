@@ -90,7 +90,7 @@ Without this, percussion tracks crash alphaTab (zero renderers → `Cannot read 
 - Windows 11, bash shell (Unix syntax — forward slashes, `/dev/null`)
 - Node 22.22.0 via nvm
 - npm (not yarn/pnpm)
-- Rust NOT installed — Tauri backend deferred to Phase 10
+- Rust 1.94.0 via rustup, MSVC build tools via VS 2022 Community
 
 ---
 
@@ -229,9 +229,10 @@ riff-diff/
 | 7 Diff Minimap | **COMPLETE** | +16 (DiffMinimap) |
 | 8 Diff Filter Toggles | **COMPLETE** | +13 (DiffFilterBar) |
 | 9 UI Polish | **COMPLETE** | +5 (useTheme) |
-| 10 Tauri Desktop | Not started | — |
+| 10 Tauri Desktop | **COMPLETE** | +3 (useFileLoader Tauri edge cases) |
+| 11 UX Enhancements | Not started | — |
 
-**Total: 110 tests passing**, `npm run build` clean.
+**Total: 113 tests passing**, `npm run build` clean, `npm run tauri:build` produces installers.
 
 ---
 
@@ -431,26 +432,56 @@ Diff colors (`diff-added`, `diff-removed`, `diff-changed`, `diff-meta`, `diff-eq
 
 ---
 
-### Phase 10 — Tauri Desktop Packaging
-**Agents:** Lead Engineer, QA Engineer
+### Phase 10 — Tauri Desktop Packaging ✅ COMPLETE
 
-**Prerequisites:** Install Rust toolchain.
+**What was built:**
+- `src-tauri/` directory with full Rust backend scaffold
+- `src-tauri/Cargo.toml` — tauri v2 + tauri-plugin-dialog + tauri-plugin-fs
+- `src-tauri/src/main.rs` — registers dialog + fs plugins, runs app
+- `src-tauri/tauri.conf.json` — identifier `com.andiman5000.riffdiff`, window 1440×900 (min 960×600), `frontendDist: ../dist`, `devUrl: http://localhost:5173`
+- `src-tauri/capabilities/default.json` — permissions: `core:default`, `dialog:allow-open`, `fs:allow-read`
+- `src-tauri/icons/` — generated from `assets/riff-diff-icon-512.png` via `npx tauri icon` (all platform sizes)
+- npm scripts: `tauri`, `tauri:dev`, `tauri:build`
+- 3 new Tauri edge-case tests: dialog cancel, Windows backslash paths, readFile error handling
 
-**Configure** `tauri.conf.json`: identifier `com.yourname.riffdiff`, targets `["msi","dmg","app"]`, window `1440×900` min `960×600`, title `Riff-Diff`. Add `tauri-plugin-dialog` and `tauri-plugin-fs` to `Cargo.toml`.
+**Key decisions:**
+- **Single `main.rs`** (not `lib.rs` + `main.rs` pair) — simpler for apps with no custom Rust commands
+- **`security.csp: null`** — alphaTab uses inline styles, data URIs, and worker blobs; CSP would block it
+- **`strictPort: true` in vite.config.ts** — ensures Tauri's `devUrl` always matches the Vite port
+- **`clearScreen: false`** — prevents Vite from clearing Tauri's output in the terminal
+- **`vi.doMock` / `vi.doUnmock` pattern** — allows per-test mock overrides for Tauri plugin imports (hoisted `vi.mock` only allows one factory per module)
+- **Git's `link.exe` shadows MSVC linker** — on Windows with Git in PATH, Rust may invoke the wrong `link.exe`. Fixed by ensuring Windows SDK + MSVC build tools are installed (sets up correct PATH via VS environment)
+- **SharedArrayBuffer works in Tauri webview** — WebView2 (Chromium) on Windows supports SharedArrayBuffer for local origins without COOP/COEP headers
 
-**Verify** `useFileLoader` Tauri path works end-to-end (file dialog → `readFile` → `ArrayBuffer`).
+**Build outputs (Windows):**
+- `src-tauri/target/release/bundle/msi/Riff-Diff_0.1.0_x64_en-US.msi`
+- `src-tauri/target/release/bundle/nsis/Riff-Diff_0.1.0_x64-setup.exe`
 
-**Build:**
-```bash
-npm run build                                            # static web
-npm run tauri build -- --target x86_64-pc-windows-msvc  # Windows .msi
-npm run tauri build                                      # Mac .dmg/.app
-```
+**Tests (3 new → 113 total):** Tauri dialog cancel, Windows backslash path extraction, readFile error propagation.
 
-**Tests:**
-- `useFileLoader` Tauri branch: mock `__TAURI_INTERNALS__`, assert `plugin-dialog` `open()` called with correct extensions, assert buffer returned
+---
 
-**Phase gate:** Web build loads and runs in browser. Desktop installer produces working app on target OS.
+### Phase 11 — UX Enhancements (Deferred from Phase 9)
+**Agents:** UX Engineer (leads), Lead Engineer, QA Engineer, Musician
+
+**Scope:** Features originally planned for Phase 9 that were deferred to keep that phase focused on visual redesign only.
+
+**Implement:**
+- **Keyboard shortcuts**: `←`/`→` scroll 200px, `1`–`9` switch track, `[`/`]` jump to prev/next diff measure, `A`/`R`/`C`/`T` toggle filters
+- **Zoom controls**: `+`/`−` buttons in header, calls `api.updateSettings({ display: { scale } }) + api.render()` on both panes
+- **Drag-and-drop file loading**: `DropZone` overlay on each pane — drop a `.gp`/`.gp7`/`.gp8` file to load it
+- **Spinner overlay**: visual indicator during alphaTab render (between `renderStarted` and `postRenderFinished`)
+- **Diff navigation**: "Previous diff" / "Next diff" buttons using `masterBarBounds.realBounds.x` to scroll to the next measure with a non-equal status
+
+**Tests (planned):**
+- Keyboard shortcut `[` scrolls to previous diff measure
+- Keyboard shortcut `→` scrolls right by 200px
+- Drop event with valid `.gp` file calls `onFileLoaded`
+- Drop event with invalid extension shows error
+- Zoom in increments `settings.display.scale` by 0.1
+- Spinner visible during render, hidden after `postRenderFinished`
+
+**Phase gate:** All tests pass. Musician confirms keyboard navigation and diff jumping work intuitively. UX signs off on drag-and-drop and zoom interactions.
 
 ---
 
@@ -467,7 +498,8 @@ npm run tauri build                                      # Mac .dmg/.app
 | 7 Minimap | ✅ done | ✅ done | ✅ done | — | — |
 | 8 Filters | ✅ done | ✅ done | ✅ done | ✅ done | — |
 | 9 Polish | ✅ done | ✅ done | ✅ done | ✅ done | ✅ done |
-| 10 Tauri | ✅ req | ✅ req | — | — | ✅ req |
+| 10 Tauri | ✅ done | ✅ done | — | — | ✅ done |
+| 11 UX Enhancements | ✅ req | ✅ req | ✅ leads | ✅ req | — |
 
 ---
 
@@ -505,3 +537,7 @@ npm run tauri build                                      # Mac .dmg/.app
 11. **Vite CSS cache stale asset references** — When removing/renaming files referenced from CSS (e.g. favicons, background images), the Vite dev server may cache the old CSS transform and error with `ENOENT`. Restart the dev server to clear the cache.
 
 12. **happy-dom has no `#root` div** — Unlike a real browser loading `index.html`, happy-dom's test environment doesn't create the `#root` element. Tests that need `document.getElementById('root')` (e.g. useTheme) must create it manually in `beforeEach`.
+
+13. **Git's `link.exe` shadows MSVC linker on Windows** — `C:\Program Files\Git\usr\bin\link.exe` (a Unix utility) can shadow the MSVC `link.exe` in PATH, causing Rust compilation to fail with `link: extra operand` or `LNK1181: cannot open input file 'kernel32.lib'`. Fix: ensure Windows SDK is installed and the MSVC build tools PATH is configured (VS installer "Desktop development with C++" workload).
+
+14. **`vi.doMock` vs `vi.mock` for per-test overrides** — `vi.mock` is hoisted to file top, so all tests share one mock factory. For Tauri tests needing different mock return values per test, use `vi.doMock` (not hoisted) in `beforeEach` with `vi.doUnmock` in `afterEach`.
