@@ -87,14 +87,6 @@ describe('AlphaTabPane', () => {
     expect(mockLoad).toHaveBeenCalledWith(buffer)
   })
 
-  it('sets scriptFile to /alphaTab.worker.mjs', () => {
-    render(<AlphaTabPane buffer={null} />)
-
-    expect(capturedOptions).not.toBeNull()
-    const core = capturedOptions!.core as Record<string, unknown>
-    expect(core.scriptFile).toBe('/alphaTab.worker.mjs')
-  })
-
   it('sets layoutMode to Horizontal', () => {
     render(<AlphaTabPane buffer={null} />)
 

@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
+  base: process.env.GITHUB_PAGES ? '/riff-diff/' : '/',
   clearScreen: false,
 
   define: {
@@ -18,10 +19,6 @@ export default defineConfig({
     host: 'localhost',
     port: 5173,
     strictPort: true,
-    headers: {
-      'Cross-Origin-Opener-Policy': 'same-origin',
-      'Cross-Origin-Embedder-Policy': 'require-corp',
-    },
   },
 
   optimizeDeps: {
