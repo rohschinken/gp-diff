@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, forwardRef, useImperativeHandle, type ReactNode } from 'react'
 import { createPortal, flushSync } from 'react-dom'
-import { AlphaTabApi, LayoutMode } from '@coderline/alphatab'
+import { AlphaTabApi, LayoutMode, SystemsLayoutMode } from '@coderline/alphatab'
 import type { model } from '@coderline/alphatab'
 
 type Score = model.Score
@@ -12,14 +12,15 @@ export interface AlphaTabPaneHandle {
 export interface AlphaTabPaneProps {
   buffer: ArrayBuffer | null
   scale?: number
+  uniformBarWidth?: number | null
   onRenderStarted?: () => void
-  onRenderFinished?: (api: AlphaTabApi, contentWidth: number) => void
+  onRenderFinished?: (api: AlphaTabApi, contentWidth: number, barWidths: number[]) => void
   onScoreLoaded?: (score: Score) => void
   children?: ReactNode
 }
 
 export const AlphaTabPane = forwardRef<AlphaTabPaneHandle, AlphaTabPaneProps>(
-  function AlphaTabPane({ buffer, scale = 1.0, onRenderStarted, onRenderFinished, onScoreLoaded, children }, ref) {
+  function AlphaTabPane({ buffer, scale = 1.0, uniformBarWidth, onRenderStarted, onRenderFinished, onScoreLoaded, children }, ref) {
   const containerRef = useRef<HTMLDivElement>(null)
   const apiRef = useRef<AlphaTabApi | null>(null)
   const initialScaleRef = useRef(scale)
@@ -28,9 +29,12 @@ export const AlphaTabPane = forwardRef<AlphaTabPaneHandle, AlphaTabPaneProps>(
   const onScoreLoadedRef = useRef(onScoreLoaded)
   const [surfaceEl, setSurfaceEl] = useState<HTMLElement | null>(null)
 
+  const uniformBarWidthRef = useRef(uniformBarWidth)
+
   onRenderStartedRef.current = onRenderStarted
   onRenderFinishedRef.current = onRenderFinished
   onScoreLoadedRef.current = onScoreLoaded
+  uniformBarWidthRef.current = uniformBarWidth
 
   useImperativeHandle(ref, () => ({
     getScrollContainer: () => containerRef.current,
@@ -84,7 +88,40 @@ export const AlphaTabPane = forwardRef<AlphaTabPaneHandle, AlphaTabPaneProps>(
           surface.style.width = contentWidth + 'px'
         }
       }
-      onRenderFinishedRef.current?.(api, contentWidth)
+      // Extract per-bar widths from boundsLookup, normalized to unscaled units.
+      // realBounds.w includes the zoom scale, but displayWidth is in logical units.
+      const currentScale = api.settings.display.scale
+      const barWidths: number[] = []
+      const lookup = api.boundsLookup
+      if (lookup) {
+        for (const system of lookup.staffSystems) {
+          for (const mb of system.bars) {
+            barWidths[mb.index] = mb.realBounds.w / currentScale
+          }
+        }
+      }
+      // If uniform bar width is set and bars don't match, apply and re-render
+      const targetWidth = uniformBarWidthRef.current
+      if (targetWidth && api.score) {
+        let needsRerender = false
+        for (const track of api.tracks) {
+          for (const staff of track.staves) {
+            for (const bar of staff.bars) {
+              if (bar.displayWidth !== targetWidth) {
+                bar.displayWidth = targetWidth
+                needsRerender = true
+              }
+            }
+          }
+        }
+        if (needsRerender) {
+          api.settings.display.systemsLayoutMode = SystemsLayoutMode.UseModelLayout
+          api.updateSettings()
+          api.render()
+          return  // skip callback; the re-render will call it with correct widths
+        }
+      }
+      onRenderFinishedRef.current?.(api, contentWidth, barWidths)
     })
 
     const unsubScore = api.scoreLoaded.on((score: Score) => {
@@ -119,6 +156,17 @@ export const AlphaTabPane = forwardRef<AlphaTabPaneHandle, AlphaTabPaneProps>(
     api.render()
     initialScaleRef.current = scale
   }, [scale])
+
+  // Re-render when uniform bar width changes
+  const prevUniformBarWidthRef = useRef(uniformBarWidth)
+  useEffect(() => {
+    if (uniformBarWidth === prevUniformBarWidthRef.current) return
+    prevUniformBarWidthRef.current = uniformBarWidth
+    const api = apiRef.current
+    if (!api?.score) return
+    // The postRenderFinished handler will apply the new width
+    api.render()
+  }, [uniformBarWidth])
 
   return (
     <div ref={containerRef} className="w-full h-full overflow-x-hidden overflow-y-auto">

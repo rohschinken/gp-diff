@@ -146,22 +146,27 @@ function App() {
   const handleRenderStartedA = useCallback(() => setIsRenderingA(true), [])
   const handleRenderStartedB = useCallback(() => setIsRenderingB(true), [])
 
-  const handleRenderFinishedA = useCallback((api: AlphaTabApi, contentWidth: number) => {
+  const [barWidthsA, setBarWidthsA] = useState<number[]>([])
+  const [barWidthsB, setBarWidthsB] = useState<number[]>([])
+
+  const handleRenderFinishedA = useCallback((api: AlphaTabApi, contentWidth: number, barWidths: number[]) => {
     apiARef.current = api
     setIsRenderingA(false)
     setRenderKeyA((prev) => prev + 1)
     const el = paneARef.current?.getScrollContainer() ?? null
     setScrollElA(el)
     setScrollWidthA(contentWidth)
+    setBarWidthsA(barWidths)
   }, [])
 
-  const handleRenderFinishedB = useCallback((api: AlphaTabApi, contentWidth: number) => {
+  const handleRenderFinishedB = useCallback((api: AlphaTabApi, contentWidth: number, barWidths: number[]) => {
     apiBRef.current = api
     setIsRenderingB(false)
     setRenderKeyB((prev) => prev + 1)
     const el = paneBRef.current?.getScrollContainer() ?? null
     setScrollElB(el)
     setScrollWidthB(contentWidth)
+    setBarWidthsB(barWidths)
   }, [])
 
   const handleScoreLoadedA = useCallback((score: Score) => {
@@ -186,6 +191,7 @@ function App() {
     if (!fileA.fileData) {
       setScrollElA(null)
       setScrollWidthA(0)
+      setBarWidthsA([])
     }
   }, [fileA.fileData])
 
@@ -193,8 +199,14 @@ function App() {
     if (!fileB.fileData) {
       setScrollElB(null)
       setScrollWidthB(0)
+      setBarWidthsB([])
     }
   }, [fileB.fileData])
+
+  // Compute uniform bar width: max across all bars in both panels
+  const uniformBarWidth = barWidthsA.length > 0 && barWidthsB.length > 0
+    ? Math.max(...barWidthsA, ...barWidthsB)
+    : null
 
   useSyncScroll(scrollElA, scrollElB, scrollbarEl)
 
@@ -394,6 +406,7 @@ function App() {
                     ref={paneARef}
                     buffer={fileA.fileData.buffer}
                     scale={zoomLevel}
+                    uniformBarWidth={uniformBarWidth}
                     onRenderStarted={handleRenderStartedA}
                     onRenderFinished={handleRenderFinishedA}
                     onScoreLoaded={handleScoreLoadedA}
@@ -433,6 +446,7 @@ function App() {
                     ref={paneBRef}
                     buffer={fileB.fileData.buffer}
                     scale={zoomLevel}
+                    uniformBarWidth={uniformBarWidth}
                     onRenderStarted={handleRenderStartedB}
                     onRenderFinished={handleRenderFinishedB}
                     onScoreLoaded={handleScoreLoadedB}
