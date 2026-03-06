@@ -27,7 +27,8 @@ React, TypeScript, Vite, Tailwind v4, alphaTab, Vitest, Tauri v2.
 
 ```bash
 npm install
-cp node_modules/@coderline/alphatab/dist/alphaTab.worker.* public/
+cp node_modules/@coderline/alphatab/dist/alphaTab.{worker.*,core.mjs} public/
+mkdir -p public/assets && cp public/alphaTab.{worker.*,core.mjs} public/assets/
 mkdir -p public/font && cp node_modules/@coderline/alphatab/dist/font/Bravura.{eot,otf,svg,woff,woff2} public/font/
 npm run dev
 ```

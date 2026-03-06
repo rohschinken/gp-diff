@@ -36,6 +36,7 @@ export const AlphaTabPane = forwardRef<AlphaTabPaneHandle, AlphaTabPaneProps>(
     const api = new AlphaTabApi(containerRef.current, {
       core: {
         scriptFile: '/alphaTab.worker.mjs',
+        fontDirectory: '/font/',
       },
       display: {
         layoutMode: LayoutMode.Horizontal,

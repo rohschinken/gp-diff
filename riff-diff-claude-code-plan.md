@@ -33,8 +33,8 @@ Enforces scope. Blocks anything outside the spec. Approves the deliverable of ea
 
 ### alphaTab API (verified)
 - **`api.load(buffer)`** — NOT `api.loadSong()`. The method is just `load()`.
-- **Worker file**: `alphaTab.worker.mjs` (ESM module, not `.js`). Copy from `node_modules/@coderline/alphatab/dist/`. Reference via `settings.core.scriptFile = '/alphaTab.worker.mjs'`.
-- **Font files**: Bravura music font must be copied to `public/font/`: `cp node_modules/@coderline/alphatab/dist/font/Bravura.{eot,otf,svg,woff,woff2} public/font/`
+- **Worker file**: `alphaTab.worker.mjs` (ESM module, not `.js`). Copy from `node_modules/@coderline/alphatab/dist/`. Reference via `settings.core.scriptFile = '/alphaTab.worker.mjs'`. Also copy `alphaTab.core.mjs` (the actual engine, ~3.1MB) — the worker imports it as a sibling. Both must also exist in `public/assets/` for production builds (Vite bundles resolve via `import.meta.url` relative to `/assets/`).
+- **Font files**: Bravura music font must be copied to `public/font/`: `cp node_modules/@coderline/alphatab/dist/font/Bravura.{eot,otf,svg,woff,woff2} public/font/`. Must also set `core.fontDirectory: '/font/'` explicitly — alphaTab auto-detects from `import.meta.url` which points to `/assets/` in production bundles.
 - **Events use `.on()` pattern**: `api.postRenderFinished.on(handler)` returns an unsubscribe function. Use `postRenderFinished` (no args, fires after DOM fully updated) rather than `renderFinished`.
 - **`scoreLoaded`**: `IEventEmitterOfT<Score>` — fires with parsed Score object after `api.load()`.
 - **`renderTracks(tracks: Track[])`** — takes an array of Track **objects**, not indices: `api.renderTracks([api.score!.tracks[trackIndex]])`.
@@ -451,7 +451,10 @@ Diff colors (`diff-added`, `diff-removed`, `diff-changed`, `diff-meta`, `diff-eq
 - **`clearScreen: false`** — prevents Vite from clearing Tauri's output in the terminal
 - **`vi.doMock` / `vi.doUnmock` pattern** — allows per-test mock overrides for Tauri plugin imports (hoisted `vi.mock` only allows one factory per module)
 - **Git's `link.exe` shadows MSVC linker** — on Windows with Git in PATH, Rust may invoke the wrong `link.exe`. Fixed by ensuring Windows SDK + MSVC build tools are installed (sets up correct PATH via VS environment)
-- **SharedArrayBuffer works in Tauri webview** — WebView2 (Chromium) on Windows supports SharedArrayBuffer for local origins without COOP/COEP headers
+- **SharedArrayBuffer in Tauri release builds** — WebView2 requires COOP/COEP headers even for Tauri's `tauri://localhost` origin. Solved via `WebviewWindowBuilder::on_web_resource_request` to inject headers on every response. This required creating the window programmatically in `setup()` (empty `app.windows` in tauri.conf.json)
+- **`alphaTab.core.mjs` must be in `public/` and `public/assets/`** — `alphaTab.worker.mjs` is a thin wrapper that imports `./alphaTab.core.mjs`. In Vite dev mode this resolves from `node_modules`, but in production builds the file must physically exist in `dist/`. Additionally, alphaTab's bundled code resolves the worker path via `import.meta.url` (relative to the JS bundle at `/assets/`), so worker files must also exist at `public/assets/`
+- **Tauri asset protocol doesn't recognize `.mjs` MIME type** — `.mjs` files are served as `text/html`, causing `Failed to load module script` errors. Fixed by checking the request URI in `on_web_resource_request` and overriding `Content-Type` to `application/javascript` for `.mjs` files
+- **alphaTab font path auto-detection** — alphaTab derives `fontDirectory` from `Environment.scriptFile` (auto-detected via `import.meta.url`). In a Vite production bundle, this resolves to `/assets/font/` instead of `/font/`. Fixed by explicitly setting `core.fontDirectory: '/font/'` in AlphaTabApi settings
 
 **Build outputs (Windows):**
 - `src-tauri/target/release/bundle/msi/Riff-Diff_0.1.0_x64_en-US.msi`
@@ -541,3 +544,11 @@ Diff colors (`diff-added`, `diff-removed`, `diff-changed`, `diff-meta`, `diff-eq
 13. **Git's `link.exe` shadows MSVC linker on Windows** — `C:\Program Files\Git\usr\bin\link.exe` (a Unix utility) can shadow the MSVC `link.exe` in PATH, causing Rust compilation to fail with `link: extra operand` or `LNK1181: cannot open input file 'kernel32.lib'`. Fix: ensure Windows SDK is installed and the MSVC build tools PATH is configured (VS installer "Desktop development with C++" workload).
 
 14. **`vi.doMock` vs `vi.mock` for per-test overrides** — `vi.mock` is hoisted to file top, so all tests share one mock factory. For Tauri tests needing different mock return values per test, use `vi.doMock` (not hoisted) in `beforeEach` with `vi.doUnmock` in `afterEach`.
+
+15. **`alphaTab.core.mjs` not in `public/`** — The README copy command originally only copied `alphaTab.worker.*` files. The worker is a thin wrapper (~1.7KB) that does `import * as alphaTab from './alphaTab.core.mjs'` — without the core module (3.1MB), the worker silently fails in production builds. Must copy both worker and core files.
+
+16. **Tauri asset protocol serves `.mjs` as `text/html`** — Tauri's built-in asset protocol doesn't have a MIME mapping for `.mjs` files. Module scripts fail with "non-JavaScript MIME type" error. Fix in `on_web_resource_request` by checking `request.uri().path().ends_with(".mjs")` and setting `Content-Type: application/javascript`.
+
+17. **alphaTab resolves worker path via `import.meta.url`** — In production bundles, alphaTab's first attempt to create a worker uses `new URL('./alphaTab.worker.mjs', import.meta.url)`, which resolves relative to the bundled JS in `/assets/`. Worker files must exist at both `/` (for explicit `scriptFile` setting) and `/assets/` (for `import.meta.url` resolution).
+
+18. **alphaTab `fontDirectory` auto-detection wrong in production** — `Environment._detectFontDirectory()` derives the font path from `Environment.scriptFile` (set via `import.meta.url` → `/assets/index-*.js`), producing `/assets/font/` instead of `/font/`. Explicitly set `core.fontDirectory: '/font/'` to override.
