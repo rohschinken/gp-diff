@@ -130,7 +130,7 @@ describe('DiffOverlay', () => {
 
     const overlay = screen.getByTestId('overlay-beat-0-0-s0')
     expect(overlay.style.backgroundColor).toBe('rgba(34, 197, 94, 0.25)')
-    expect(overlay.style.left).toBe('10px')
+    expect(overlay.style.left).toBe('1px')  // 10 - 9 (beat x offset)
     expect(overlay.style.top).toBe('20px')
     expect(overlay.style.width).toBe('30px')
     expect(overlay.style.height).toBe('40px')
@@ -154,7 +154,7 @@ describe('DiffOverlay', () => {
 
     const overlay = screen.getByTestId('overlay-beat-0-0-s0')
     expect(overlay.style.backgroundColor).toBe('rgba(239, 68, 68, 0.25)')
-    expect(overlay.style.left).toBe('50px')
+    expect(overlay.style.left).toBe('41px')  // 50 - 9 (beat x offset)
   })
 
   // 5. Changed beat → yellow overlay
@@ -281,8 +281,8 @@ describe('DiffOverlay', () => {
 
     const ghost = screen.getByTestId('overlay-ghost-0')
     expect(ghost.style.backgroundColor).toBe('rgba(34, 197, 94, 0.12)')
-    expect(ghost.style.left).toBe('0px')
-    expect(ghost.style.width).toBe('200px')
+    expect(ghost.style.left).toBe('2px')    // 0 + 2 (ghost inset)
+    expect(ghost.style.width).toBe('196px') // 200 - 4 (ghost inset)
   })
 
   // 11. Ghost: removed beat in pane B (beatB=null) → colored ghost at masterBar bounds
@@ -345,7 +345,7 @@ describe('DiffOverlay', () => {
 
     const badge = screen.getByTestId('badge-0')
     expect(badge.textContent).toBe('120 BPM')
-    expect(badge.style.backgroundColor).toBe('#6366f1')
+    expect(badge.style.backgroundColor).toBe('#eab308')
   })
 
   // 14. TimeSig diff → badge with signature text
@@ -470,7 +470,7 @@ describe('DiffOverlay', () => {
     )
 
     let overlay = screen.getByTestId('overlay-beat-0-0-s0')
-    expect(overlay.style.left).toBe('10px')
+    expect(overlay.style.left).toBe('1px')  // 10 - 9
 
     // Simulate boundsLookup update (alphaTab re-rendered at different position)
     beatMap.set(beatA1, beatBounds2)
@@ -480,7 +480,7 @@ describe('DiffOverlay', () => {
     )
 
     overlay = screen.getByTestId('overlay-beat-0-0-s0')
-    expect(overlay.style.left).toBe('100px')
+    expect(overlay.style.left).toBe('91px')  // 100 - 9
     expect(overlay.style.top).toBe('200px')
   })
 })
