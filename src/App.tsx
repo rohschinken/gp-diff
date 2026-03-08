@@ -208,6 +208,10 @@ function App() {
   const handleScoreLoadedA = useCallback((score: Score) => {
     forceStaveVisibility(score, showNotationRef.current)
     scoreARef.current = score
+    // Clear stale phantom state — the old score's phantom positions are invalid
+    // for the new score and would corrupt it by removing real bars.
+    prevPhantomsARef.current = []
+    pendingPhantomsRef.current = null
     // Mark as rendering immediately — the actual renderStarted event arrives
     // asynchronously (separate worker message), so without this guard the
     // phantom insertion effect could run before isRenderingA becomes true.
@@ -221,6 +225,8 @@ function App() {
   const handleScoreLoadedB = useCallback((score: Score) => {
     forceStaveVisibility(score, showNotationRef.current)
     scoreBRef.current = score
+    prevPhantomsBRef.current = []
+    pendingPhantomsRef.current = null
     setIsRenderingB(true)
     setTracksB(extractTracks(score))
     setTrackMapB(0)
@@ -295,8 +301,13 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showNotation])
 
-  // Pending phantom positions: computed in diff effect, applied when panes are idle
-  const pendingPhantomsRef = useRef<{ posA: number[]; posB: number[]; result: DiffResult } | null>(null)
+  // Pending phantom positions: computed in diff effect, applied when panes are idle.
+  // rerenderA/B flags track whether a pane's score was mutated (phantom removal)
+  // and needs a re-render even if no new phantoms are being inserted.
+  const pendingPhantomsRef = useRef<{
+    posA: number[]; posB: number[]; result: DiffResult
+    rerenderA: boolean; rerenderB: boolean
+  } | null>(null)
 
   // Compute diff when both scores are loaded or track selection changes
   useEffect(() => {
@@ -310,14 +321,20 @@ function App() {
       return
     }
 
-    // Strip any previously inserted phantom bars before re-diffing
+    // Strip any previously inserted phantom bars before re-diffing.
+    // Track which scores were mutated so the insertion effect knows
+    // to re-render those panes even if no new phantoms are needed.
+    let removedFromA = false
+    let removedFromB = false
     if (prevPhantomsARef.current.length > 0) {
       removePhantomBars(scoreA, prevPhantomsARef.current)
       prevPhantomsARef.current = []
+      removedFromA = true
     }
     if (prevPhantomsBRef.current.length > 0) {
       removePhantomBars(scoreB, prevPhantomsBRef.current)
       prevPhantomsBRef.current = []
+      removedFromB = true
     }
 
     // Compute diff on original (phantom-free) scores
@@ -328,8 +345,13 @@ function App() {
     const barPairs = extractBarPairs(result.measures)
     const { phantomsA: posA, phantomsB: posB } = computePhantomPositions(barPairs)
 
-    if (posA.length > 0 || posB.length > 0) {
-      pendingPhantomsRef.current = { posA, posB, result }
+    const needsWork = posA.length > 0 || posB.length > 0 || removedFromA || removedFromB
+    if (needsWork) {
+      pendingPhantomsRef.current = {
+        posA, posB, result,
+        rerenderA: posA.length > 0 || removedFromA,
+        rerenderB: posB.length > 0 || removedFromB,
+      }
     } else {
       pendingPhantomsRef.current = null
     }
@@ -348,7 +370,7 @@ function App() {
     const scoreB = scoreBRef.current
     if (!scoreA || !scoreB) return
 
-    const { posA, posB } = pending
+    const { posA, posB, rerenderA, rerenderB } = pending
 
     insertPhantomBars(scoreA, posA)
     insertPhantomBars(scoreB, posB)
@@ -356,12 +378,12 @@ function App() {
     prevPhantomsARef.current = posA
     prevPhantomsBRef.current = posB
 
-    // Force both panes to re-render with inserted phantom bars
-    if (posA.length > 0 && apiARef.current) {
+    // Re-render panes whose scores were modified (phantom removal or insertion)
+    if (rerenderA && apiARef.current) {
       const track = apiARef.current.score?.tracks[trackMapA]
       if (track) apiARef.current.renderTracks([track])
     }
-    if (posB.length > 0 && apiBRef.current) {
+    if (rerenderB && apiBRef.current) {
       const track = apiBRef.current.score?.tracks[trackMapB]
       if (track) apiBRef.current.renderTracks([track])
     }
