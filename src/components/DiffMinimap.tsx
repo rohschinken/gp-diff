@@ -1,21 +1,26 @@
 import { useEffect, useRef, useCallback, type PointerEvent as ReactPointerEvent } from 'react'
 import type { DiffResult, DiffFilters, MeasureDiff, BeatStatus } from '../diff/types'
+import type { ComparisonMode } from '../renderer/DiffOverlay'
 import { DIFF_COLORS } from '../diff/colors'
 
 const MINIMAP_HEIGHT = 40
 
-export const MINIMAP_COLORS: Record<BeatStatus, string> = {
+export type MeasureStatus = BeatStatus | 'meta'
+
+export const MINIMAP_COLORS: Record<MeasureStatus, string> = {
   equal: DIFF_COLORS.equal.solid,
   added: DIFF_COLORS.added.rgb,
   removed: DIFF_COLORS.removed.rgb,
   changed: DIFF_COLORS.changed.rgb,
+  meta: DIFF_COLORS.meta.rgb,
 }
 
-const STATUS_PRIORITY: Record<BeatStatus, number> = {
+const STATUS_PRIORITY: Record<MeasureStatus, number> = {
   equal: 0,
   added: 1,
-  changed: 2,
-  removed: 3,
+  meta: 2,
+  changed: 3,
+  removed: 4,
 }
 
 export interface ViewportInfo {
@@ -26,13 +31,13 @@ export interface ViewportInfo {
 export function computeMeasureStatus(
   measure: MeasureDiff,
   filters: DiffFilters,
-): BeatStatus {
+): MeasureStatus {
   // Bar-level add/remove
   if (measure.measureIndexA === null && filters.showAddedRemoved) return 'added'
   if (measure.measureIndexB === null && filters.showAddedRemoved) return 'removed'
   if (measure.measureIndexA === null || measure.measureIndexB === null) return 'equal'
 
-  let worst: BeatStatus = 'equal'
+  let worst: MeasureStatus = 'equal'
 
   for (const bd of measure.beatDiffs) {
     if (bd.status === 'equal') continue
@@ -45,12 +50,13 @@ export function computeMeasureStatus(
     }
   }
 
+  // Tempo/timesig diff shows as purple ('meta') when no beat-level changes are worse
   if (
     filters.showTempoTimeSig &&
     (measure.tempoDiff || measure.timeSigDiff) &&
-    STATUS_PRIORITY[worst] < STATUS_PRIORITY['changed']
+    STATUS_PRIORITY[worst] < STATUS_PRIORITY['meta']
   ) {
-    worst = 'changed'
+    worst = 'meta'
   }
 
   return worst
@@ -60,8 +66,9 @@ export function drawMinimap(
   ctx: CanvasRenderingContext2D,
   width: number,
   height: number,
-  statuses: BeatStatus[],
+  statuses: MeasureStatus[],
   viewport: ViewportInfo | null,
+  comparisonMode: ComparisonMode = 'aToB',
 ): void {
   ctx.clearRect(0, 0, width, height)
 
@@ -69,9 +76,16 @@ export function drawMinimap(
   if (totalMeasures === 0) return
 
   const stripeWidth = width / totalMeasures
+  const reversed = comparisonMode === 'bToA'
 
   for (let i = 0; i < totalMeasures; i++) {
-    ctx.fillStyle = MINIMAP_COLORS[statuses[i]]
+    let status = statuses[i]
+    // Swap added/removed colors when comparison direction is reversed
+    if (reversed) {
+      if (status === 'added') status = 'removed'
+      else if (status === 'removed') status = 'added'
+    }
+    ctx.fillStyle = MINIMAP_COLORS[status]
     ctx.fillRect(i * stripeWidth, 0, Math.max(stripeWidth, 1), height)
   }
 
@@ -91,9 +105,10 @@ export interface DiffMinimapProps {
   filters: DiffFilters
   scrollbarEl: HTMLElement | null
   contentWidth?: number
+  comparisonMode?: ComparisonMode
 }
 
-export function DiffMinimap({ diffResult, filters, scrollbarEl, contentWidth }: DiffMinimapProps) {
+export function DiffMinimap({ diffResult, filters, scrollbarEl, contentWidth, comparisonMode = 'aToB' }: DiffMinimapProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const isDraggingRef = useRef(false)
@@ -125,8 +140,8 @@ export function DiffMinimap({ diffResult, filters, scrollbarEl, contentWidth }: 
       }
     }
 
-    drawMinimap(ctx, cssWidth, cssHeight, statuses, viewport)
-  }, [diffResult, filters, scrollbarEl, contentWidth])
+    drawMinimap(ctx, cssWidth, cssHeight, statuses, viewport, comparisonMode)
+  }, [diffResult, filters, scrollbarEl, contentWidth, comparisonMode])
 
   // Redraw on diffResult/filters/scrollbarEl change
   useEffect(() => {

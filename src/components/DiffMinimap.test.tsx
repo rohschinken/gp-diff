@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { computeMeasureStatus, drawMinimap, DiffMinimap, MINIMAP_COLORS } from './DiffMinimap'
-import type { ViewportInfo } from './DiffMinimap'
+import type { ViewportInfo, MeasureStatus } from './DiffMinimap'
 import type { MeasureDiff, DiffFilters, BeatStatus } from '../diff/types'
 import { DEFAULT_DIFF_FILTERS } from '../diff/types'
 import type { DiffResult } from '../diff/types'
@@ -122,8 +122,15 @@ describe('computeMeasureStatus', () => {
     expect(computeMeasureStatus(measure, f)).toBe('changed')
   })
 
-  it('returns "changed" for tempo diff when showTempoTimeSig is true', () => {
+  it('returns "meta" for tempo diff when showTempoTimeSig is true', () => {
     const measure = makeMeasure(0, ['equal'], {
+      tempoDiff: { tempoA: 120, tempoB: 140 },
+    })
+    expect(computeMeasureStatus(measure, filters)).toBe('meta')
+  })
+
+  it('returns "changed" when both beat changes and tempo diff exist', () => {
+    const measure = makeMeasure(0, ['equal', 'changed'], {
       tempoDiff: { tempoA: 120, tempoB: 140 },
     })
     expect(computeMeasureStatus(measure, filters)).toBe('changed')
@@ -146,33 +153,55 @@ describe('drawMinimap', () => {
   })
 
   it('draws correct number of stripes for measures', () => {
-    const statuses: BeatStatus[] = ['equal', 'added', 'removed', 'changed', 'equal']
+    const statuses: MeasureStatus[] = ['equal', 'added', 'removed', 'changed', 'equal']
     drawMinimap(ctx as unknown as CanvasRenderingContext2D, 500, 28, statuses, null)
     // 5 stripes
     expect(ctx.fillRect).toHaveBeenCalledTimes(5)
   })
 
   it('uses red for removed status stripe', () => {
-    const statuses: BeatStatus[] = ['equal', 'removed', 'equal']
+    const statuses: MeasureStatus[] = ['equal', 'removed', 'equal']
     drawMinimap(ctx as unknown as CanvasRenderingContext2D, 300, 28, statuses, null)
     // Second fillRect should have been called with red fillStyle
     expect(ctx.fillStyleHistory[1]).toBe(MINIMAP_COLORS.removed)
   })
 
   it('uses grey for equal status stripe', () => {
-    const statuses: BeatStatus[] = ['equal']
+    const statuses: MeasureStatus[] = ['equal']
     drawMinimap(ctx as unknown as CanvasRenderingContext2D, 100, 28, statuses, null)
     expect(ctx.fillStyleHistory[0]).toBe(MINIMAP_COLORS.equal)
   })
 
+  it('uses purple for meta status stripe', () => {
+    const statuses: MeasureStatus[] = ['meta']
+    drawMinimap(ctx as unknown as CanvasRenderingContext2D, 100, 28, statuses, null)
+    expect(ctx.fillStyleHistory[0]).toBe(MINIMAP_COLORS.meta)
+  })
+
   it('draws viewport indicator after stripes', () => {
-    const statuses: BeatStatus[] = ['equal', 'equal']
+    const statuses: MeasureStatus[] = ['equal', 'equal']
     const viewport: ViewportInfo = { start: 0.25, width: 0.5 }
     drawMinimap(ctx as unknown as CanvasRenderingContext2D, 200, 28, statuses, viewport)
     // 2 stripe fillRects + 1 viewport fillRect = 3 fillRect calls
     expect(ctx.fillRect).toHaveBeenCalledTimes(3)
     // viewport strokeRect called once
     expect(ctx.strokeRect).toHaveBeenCalledTimes(1)
+  })
+
+  it('swaps added/removed colors when comparisonMode is bToA', () => {
+    const statuses: MeasureStatus[] = ['added', 'removed']
+    drawMinimap(ctx as unknown as CanvasRenderingContext2D, 200, 28, statuses, null, 'bToA')
+    // 'added' should render as removed color (red), 'removed' as added color (green)
+    expect(ctx.fillStyleHistory[0]).toBe(MINIMAP_COLORS.removed)
+    expect(ctx.fillStyleHistory[1]).toBe(MINIMAP_COLORS.added)
+  })
+
+  it('does not swap changed/meta/equal colors in bToA mode', () => {
+    const statuses: MeasureStatus[] = ['changed', 'meta', 'equal']
+    drawMinimap(ctx as unknown as CanvasRenderingContext2D, 300, 28, statuses, null, 'bToA')
+    expect(ctx.fillStyleHistory[0]).toBe(MINIMAP_COLORS.changed)
+    expect(ctx.fillStyleHistory[1]).toBe(MINIMAP_COLORS.meta)
+    expect(ctx.fillStyleHistory[2]).toBe(MINIMAP_COLORS.equal)
   })
 })
 

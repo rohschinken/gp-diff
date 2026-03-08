@@ -644,6 +644,7 @@ function App() {
             filters={filters}
             scrollbarEl={scrollbarEl}
             contentWidth={Math.max(scrollWidthA, scrollWidthB)}
+            comparisonMode={comparisonMode}
           />
           {(scrollWidthA > 0 || scrollWidthB > 0) && (
             <div
